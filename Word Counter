@@ -1,0 +1,37 @@
+import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
+
+public class WordCounter {
+    public static void main(String[] args) {
+        // Prompt the user for input
+        System.out.println("Enter a text or provide a file to count the words:");
+        Scanner scanner = new Scanner(System.in);
+        String input = scanner.nextLine();
+        scanner.close();
+
+        // Split the input string into words
+        String[] words = input.split("\\s+");
+
+        // Initialize a counter map to store word counts
+        Map<String, Integer> wordCounts = new HashMap<>();
+
+        // Count the words
+        for (String word : words) {
+            // Remove punctuation and convert to lowercase for accurate counting
+            word = word.replaceAll("[^a-zA-Z]", "").toLowerCase();
+            if (!word.isEmpty()) {
+                wordCounts.put(word, wordCounts.getOrDefault(word, 0) + 1);
+            }
+        }
+
+        // Display the total count of words
+        System.out.println("Total count of words: " + words.length);
+
+        // Display word frequencies
+        System.out.println("Word frequencies:");
+        for (Map.Entry<String, Integer> entry : wordCounts.entrySet()) {
+            System.out.println(entry.getKey() + ": " + entry.getValue());
+        }
+    }
+}
