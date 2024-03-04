@@ -1,77 +1,75 @@
-import java.util.*;
-import java.io.File;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
+import java.util.Map;
 
-public class task2 {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        String inputText = "";
+public class task2_GUI extends JFrame {
+    private JTextArea inputTextArea;
+    private JTextArea outputTextArea;
+    private JButton countButton;
+    private JTextField commonWordsField;
+    private JComboBox<String> actionComboBox;
 
-        System.out.print("Enter '1' to input text manually or '2' to specify a file for word count: ");
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // Consume the newline character
-        System.out.println();
+    public task2_GUI() {
+        setTitle("Word Count Program");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 400);
 
-        if (choice == 1) {
-            System.out.println("Enter the text for word counting:");
-            inputText = scanner.nextLine();
-        } else if (choice == 2) {
-            System.out.println("Enter the path to the file you want to count words from:");
-            String filePath = scanner.nextLine();
+        inputTextArea = new JTextArea(10, 40);
+        outputTextArea = new JTextArea(10, 40);
+        outputTextArea.setEditable(false);
+        countButton = new JButton("Count Words");
+        commonWordsField = new JTextField("a, and, as, in, is, it, of, that, the, to, with");
+        actionComboBox = new JComboBox<>(new String[]{"Total Word Count", "Word Frequency (Include Common Words)", "Word Frequency (Exclude Common Words)"});
 
-            try {
-                inputText = readFile(filePath);
-            } catch (FileNotFoundException e) {
-                System.err.println("Error: File not found.");
-                System.exit(1);
-            }
-        } else {
-            System.err.println("Invalid choice. Please enter '1' or '2'.");
-            System.exit(1);
-        }
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
 
-        whileloop: while (true) {
-            System.out.print(
-                    "Please Enter:\n1. -> To know the Total Number of Words.\n2. -> To know the frequency of all input words.\n3. -> To know the frequency of all input words except common words.\n4. -> To Exit : ");
-            int action = scanner.nextInt();
+        JPanel topPanel = new JPanel();
+        topPanel.add(actionComboBox);
+        topPanel.add(commonWordsField);
+        topPanel.add(countButton);
 
-            switch (action) {
-                case 1: {
+        panel.add(new JScrollPane(inputTextArea), BorderLayout.NORTH);
+        panel.add(topPanel, BorderLayout.CENTER);
+        panel.add(new JScrollPane(outputTextArea), BorderLayout.SOUTH);
+
+        add(panel);
+
+        countButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String inputText = inputTextArea.getText();
+                int action = actionComboBox.getSelectedIndex();
+                String commonWordsText = commonWordsField.getText();
+
+                if (inputText.isEmpty()) {
+                    outputTextArea.setText("Please enter text.");
+                    return;
+                }
+
+                if (action == 0) {
                     int totalWordCount = countWords(inputText);
-                    System.out.println("--->  Total Word Count: " + totalWordCount);
-                    break;
-                }
-                case 2: {
-                    Map<String, Integer> wordFrequency = getWordFrequency(inputText, 2);
-                    System.out.println("--->  Total Number of Words: " + wordFrequency.size());
-                    System.out.println("Word Frequency:");
+                    outputTextArea.setText("Total Word Count: " + totalWordCount);
+                } else if (action == 1) {
+                    Map<String, Integer> wordFrequency = getWordFrequency(inputText, commonWordsText, 1);
+                    outputTextArea.setText("Total Number of Words: " + wordFrequency.size() + "\n");
                     for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
-                        System.out.println(entry.getKey() + ": " + entry.getValue());
+                        outputTextArea.append(entry.getKey() + ": " + entry.getValue() + "\n");
                     }
-                    break;
-                }
-                case 3: {
-                    Map<String, Integer> wordFrequency = getWordFrequency(inputText, 3);
-                    System.out.println("--->  Total Number of Words (except common words): " + wordFrequency.size());
-                    System.out.println("The Common Words are : { \"a\", \"and\", \"as\", \"in\", \"is\", \"it\", \"of\", \"that\", \"the\", \"to\", \"with\"}");
-                    System.out.println("Word Frequency:");
+                } else if (action == 2) {
+                    Map<String, Integer> wordFrequency = getWordFrequency(inputText, commonWordsText, 2);
+                    outputTextArea.setText("Total Number of Words (except common words): " + wordFrequency.size() + "\n");
+                    outputTextArea.append("Common Words: " + commonWordsText + "\n");
                     for (Map.Entry<String, Integer> entry : wordFrequency.entrySet()) {
-                        System.out.println(entry.getKey() + ": " + entry.getValue());
+                        outputTextArea.append(entry.getKey() + ": " + entry.getValue() + "\n");
                     }
-                    break;
-                }
-                case 4: {
-                    System.out.println("Thank You for using the program!!!\n.......Program Exiting.......");
-                    break whileloop;
-                }
-                default: {
-                    System.out.println("Wrong Input!!!\nEnter Correctly...");
-                    break;
                 }
             }
-        }
-
-        scanner.close();
+        });
     }
 
     public static int countWords(String text) {
@@ -79,16 +77,19 @@ public class task2 {
         return words.length;
     }
 
-    public static Map<String, Integer> getWordFrequency(String text, int n) {
+    public static Map<String, Integer> getWordFrequency(String text, String commonWordsText, int n) {
+        String[] commonWords = commonWordsText.split(", ");
         String[] words = text.split("[\\s.,!?;:]+");
-        Map<String, Integer> wordFrequency = new HashMap<>();
+        Map<String, Integer> wordFrequency = new java.util.HashMap<>();
 
         for (String word : words) {
-            word = word.toLowerCase(); // Convert to lowercase to ensure case-insensitive counts
-            if (isCommonWord(word) && n == 3) {
+            word = word.toLowerCase();
+            if (isCommonWord(word, commonWords) && n == 2) {
+                //wordFrequency.put(word, wordFrequency.getOrDefault(word, 0) + 1);
                 continue;
-                // wordFrequency.put(word, wordFrequency.getOrDefault(word, 0) + 1);
-            } else {
+            }
+            else
+            {
                 wordFrequency.put(word, wordFrequency.getOrDefault(word, 0) + 1);
             }
         }
@@ -96,25 +97,15 @@ public class task2 {
         return wordFrequency;
     }
 
-    public static boolean isCommonWord(String word) {
-        // Define a list of common words to ignore (stop words)
-        String[] commonWords = { "a", "and", "as", "in", "is", "it", "of", "that", "the", "to", "with"};
+    public static boolean isCommonWord(String word, String[] commonWords) {
         return Arrays.asList(commonWords).contains(word.toLowerCase());
     }
 
-    public static String readFile(String filePath) throws FileNotFoundException {
-        StringBuilder content = new StringBuilder();
-        File file = new File(filePath);
-
-        try (Scanner fileScanner = new Scanner(file)) {
-            while (fileScanner.hasNextLine()) {
-                content.append(fileScanner.nextLine());
-                if (fileScanner.hasNextLine()) {
-                    content.append("\n");
-                }
-            }
-        }
-
-        return content.toString();
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            task2_GUI wordCountGUI = new task2_GUI();
+            wordCountGUI.setVisible(true);
+        });
     }
 }
+
